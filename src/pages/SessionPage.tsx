@@ -1,10 +1,12 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import useSession from '../hooks/useSession'
 import useInterviewStore from '../store/useInterviewStore'
-import useTimer from '../hooks/useTimer'
 import Recorder from '../components/session/Recorder'
 import Button from '../components/ui/Button'
 import ConfirmToast from '../components/ui/Toast'
+import CategoryPill from '../components/ui/CategoryPill'
+import SessionDoneScreen from '../components/session/SessionDoneScreen'
 
 function formatDuration(secs: number): string {
   const m = String(Math.floor(secs / 60)).padStart(2, '0')
@@ -14,93 +16,38 @@ function formatDuration(secs: number): string {
 
 export default function SessionPage() {
   const navigate = useNavigate()
-  const { session, nextQuestion, restartSession, endSession } = useInterviewStore()
-  const { formatted, start: startTimer, stop: stopTimer, reset: resetTimer } = useTimer()
-  const [showAnswer, setShowAnswer] = useState(false)
-  const [recorderKey, setRecorderKey] = useState(0)
-  const [confirmEnd, setConfirmEnd] = useState(false)
+  const { session } = useInterviewStore()
+  const {
+    timer,
+    showAnswer,
+    setShowAnswer,
+    recorderKey,
+    confirmEnd,
+    setConfirmEnd,
+    handleNext,
+    handleRestart,
+    handleEnd,
+  } = useSession()
 
   useEffect(() => {
     if (!session) { navigate('/'); return }
-    startTimer()
-    return () => stopTimer()
+    timer.start()
+    return () => timer.stop()
   }, [])
-
-  const currentQuestion = session?.questions[session.currentIndex]
-  const totalQuestions = session?.questions.length ?? 0
-  const totalAsked = session?.askedIds.length ?? 0
-  const progress = totalQuestions > 0 ? ((session!.currentIndex + 1) / totalQuestions) * 100 : 0
-
-  const handleNext = useCallback(() => {
-    nextQuestion()
-    resetTimer()
-    startTimer()
-    setShowAnswer(false)
-    setRecorderKey(k => k + 1)
-  }, [nextQuestion, resetTimer, startTimer])
-
-  const handleRestart = () => {
-    restartSession()
-    resetTimer()
-    startTimer()
-    setShowAnswer(false)
-    setRecorderKey(k => k + 1)
-  }
-
-  const handleEnd = () => {
-    stopTimer()
-    endSession()
-    navigate('/')
-  }
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (session?.isDone) return
-      if (e.key === 'ArrowRight' || e.key === 'n') handleNext()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [handleNext, session?.isDone])
 
   if (!session) return null
 
-  // 모든 질문 완료 화면
+  const currentQuestion = session.questions[session.currentIndex]
+  const totalQuestions = session.questions.length
+  const progress = totalQuestions > 0 ? ((session.currentIndex + 1) / totalQuestions) * 100 : 0
+
   if (session.isDone) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center space-y-6">
-          <div className="text-5xl">🎉</div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">모든 질문을 완료했습니다!</h2>
-            <p className="text-sm text-gray-500 mt-2">총 {totalAsked}개 질문 · {totalQuestions}개 문제 세트</p>
-          </div>
-
-          {session.recordings.length > 0 && (
-            <div className="text-left bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2">
-              <p className="text-xs font-semibold text-gray-600 mb-2">녹음 목록</p>
-              {session.recordings.map((r, i) => (
-                <div key={i} className="flex items-center justify-between text-xs gap-3">
-                  <span className="text-gray-600 truncate flex-1">{r.questionText}</span>
-                  <span className="text-gray-400 font-mono shrink-0">{formatDuration(r.duration)}</span>
-                  <audio controls src={r.blobURL} className="h-6 w-32 shrink-0" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex gap-3 justify-center">
-            <Button variant="secondary" onClick={handleEnd}>면접 종료</Button>
-            <Button onClick={handleRestart}>
-              다시 시작
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </Button>
-          </div>
-        </div>
-      </div>
+      <SessionDoneScreen
+        session={session}
+        onRestart={handleRestart}
+        onEnd={handleEnd}
+      />
     )
   }
 
@@ -110,21 +57,19 @@ export default function SessionPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <h1 className="text-base font-semibold text-gray-900">면접 진행 중</h1>
             {session.filterCategory && (
-              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-                {session.filterCategory}
-              </span>
+              <CategoryPill category={session.filterCategory} />
             )}
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+            <span className="flex items-center gap-1.5 text-sm text-gray-500 font-mono">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="font-mono">{formatted}</span>
-            </div>
+              {timer.formatted}
+            </span>
             <Button variant="ghost" size="sm" onClick={() => setConfirmEnd(true)} className="text-red-500 hover:bg-red-50">
               종료
             </Button>
@@ -138,14 +83,13 @@ export default function SessionPage() {
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>질문 {session.currentIndex + 1} / {totalQuestions}</span>
-          <span>총 {totalAsked}개 질문 받음</span>
+          <span>총 {session.askedIds.length}개 받음</span>
         </div>
 
+        {/* Question Card */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
           <div className="mb-4">
-            <span className="text-xs font-medium bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">
-              {currentQuestion.category}
-            </span>
+            <CategoryPill category={currentQuestion.category} />
           </div>
           <p className="text-2xl font-medium text-gray-900 leading-relaxed">
             {currentQuestion.text}
@@ -153,8 +97,8 @@ export default function SessionPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
             <button
-              onClick={() => setShowAnswer(!showAnswer)}
-              className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+              onClick={() => setShowAnswer(v => !v)}
+              className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1.5 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={showAnswer
@@ -164,7 +108,7 @@ export default function SessionPage() {
               </svg>
               {showAnswer ? '답변 힌트 숨기기' : '답변 힌트 보기'}
             </button>
-            <span className="text-xs text-gray-400 font-mono">경과 {formatted}</span>
+            <span className="text-xs text-gray-400 font-mono">경과 {timer.formatted}</span>
           </div>
 
           {showAnswer && (
@@ -195,12 +139,10 @@ export default function SessionPage() {
             <h3 className="text-sm font-semibold text-gray-700 mb-3">이번 세션 녹음 목록</h3>
             <ul className="space-y-2">
               {session.recordings.map((r, i) => (
-                <li key={i} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600 truncate flex-1 mr-4">{r.questionText}</span>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs text-gray-400 font-mono">{formatDuration(r.duration)}</span>
-                    <audio controls src={r.blobURL} className="h-7 w-40" />
-                  </div>
+                <li key={i} className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-600 truncate flex-1">{r.questionText}</span>
+                  <span className="text-xs text-gray-400 font-mono shrink-0">{formatDuration(r.duration)}</span>
+                  <audio controls src={r.blobURL} className="h-7 w-40 shrink-0" />
                 </li>
               ))}
             </ul>

@@ -1,19 +1,9 @@
 import { useState } from 'react'
 import useInterviewStore from '../../store/useInterviewStore'
 import Button from '../ui/Button'
-
-const CATEGORY_COLORS: Record<string, string> = {
-  '일반': 'bg-gray-100 text-gray-700',
-  '프론트엔드': 'bg-blue-100 text-blue-700',
-  '백엔드': 'bg-purple-100 text-purple-700',
-  'CS/자료구조': 'bg-amber-100 text-amber-700',
-  '알고리즘': 'bg-green-100 text-green-700',
-  '행동면접': 'bg-pink-100 text-pink-700',
-}
-
-function categoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] ?? 'bg-gray-100 text-gray-600'
-}
+import Badge from '../ui/Badge'
+import ConfirmToast from '../ui/Toast'
+import { getCategoryColor } from '../../constants/categories'
 
 interface QuestionListProps {
   filterCategory: string | null
@@ -24,6 +14,7 @@ export default function QuestionList({ filterCategory }: QuestionListProps) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editText, setEditText] = useState('')
   const [editCat, setEditCat] = useState('')
+  const [confirmClear, setConfirmClear] = useState(false)
 
   const filtered = filterCategory
     ? questions.filter(q => q.category === filterCategory)
@@ -59,7 +50,7 @@ export default function QuestionList({ filterCategory }: QuestionListProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => { if (confirm('모든 질문을 삭제할까요?')) clearQuestions() }}
+            onClick={() => setConfirmClear(true)}
             className="text-red-500 hover:bg-red-50"
           >
             전체 삭제
@@ -99,9 +90,7 @@ export default function QuestionList({ filterCategory }: QuestionListProps) {
           ) : (
             <>
               <div className="flex-1 min-w-0">
-                <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium mb-1 ${categoryColor(q.category)}`}>
-                  {q.category}
-                </span>
+                <Badge label={q.category} className={`mb-1 ${getCategoryColor(q.category)}`} />
                 <p className="text-sm text-gray-800 break-words">{q.text}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -120,6 +109,14 @@ export default function QuestionList({ filterCategory }: QuestionListProps) {
           )}
         </div>
       ))}
+      {confirmClear && (
+        <ConfirmToast
+          message="모든 질문을 삭제할까요?"
+          type="danger"
+          onConfirm={() => { clearQuestions(); setConfirmClear(false) }}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
     </div>
   )
 }

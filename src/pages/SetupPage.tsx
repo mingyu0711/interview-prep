@@ -1,36 +1,24 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import useInterviewStore from '../store/useInterviewStore'
+import useSetup from '../hooks/useSetup'
 import QuestionInput from '../components/setup/QuestionInput'
 import FileUpload from '../components/setup/FileUpload'
 import QuestionList from '../components/setup/QuestionList'
 import Button from '../components/ui/Button'
+import CategoryPill from '../components/ui/CategoryPill'
 
 export default function SetupPage() {
-  const navigate = useNavigate()
-  const { questions, categories, startSession, addCategory } = useInterviewStore()
-  const [filterCat, setFilterCat] = useState('')
-  const [newCatName, setNewCatName] = useState('')
-  const [showCatInput, setShowCatInput] = useState(false)
-
-  const handleStart = () => {
-    const ok = startSession(filterCat || null)
-    if (ok) navigate('/session')
-    else alert('선택한 카테고리에 질문이 없습니다.')
-  }
-
-  const handleAddCategory = () => {
-    if (newCatName.trim()) {
-      addCategory(newCatName.trim())
-      setNewCatName('')
-      setShowCatInput(false)
-    }
-  }
-
-  const categoryCounts = questions.reduce<Record<string, number>>((acc, q) => {
-    acc[q.category] = (acc[q.category] ?? 0) + 1
-    return acc
-  }, {})
+  const {
+    questions,
+    categories,
+    filterCat,
+    newCatName,
+    setNewCatName,
+    showCatInput,
+    setShowCatInput,
+    categoryCounts,
+    handleStart,
+    handleAddCategory,
+    toggleCategory,
+  } = useSetup()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,7 +51,7 @@ export default function SetupPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800">카테고리</h2>
             <button
-              onClick={() => setShowCatInput(!showCatInput)}
+              onClick={() => setShowCatInput(v => !v)}
               className="text-xs text-indigo-600 hover:underline"
             >
               + 카테고리 추가
@@ -86,24 +74,20 @@ export default function SetupPage() {
           )}
 
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilterCat('')}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filterCat === '' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              전체 ({questions.length})
-            </button>
+            <CategoryPill
+              category="전체"
+              count={questions.length}
+              selected={filterCat === ''}
+              onClick={() => toggleCategory('')}
+            />
             {categories.map(cat => (
-              <button
+              <CategoryPill
                 key={cat}
-                onClick={() => setFilterCat(cat === filterCat ? '' : cat)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filterCat === cat ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {cat} ({categoryCounts[cat] ?? 0})
-              </button>
+                category={cat}
+                count={categoryCounts[cat] ?? 0}
+                selected={filterCat === cat}
+                onClick={() => toggleCategory(cat)}
+              />
             ))}
           </div>
 
