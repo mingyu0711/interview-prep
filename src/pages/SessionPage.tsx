@@ -4,6 +4,7 @@ import useInterviewStore from '../store/useInterviewStore'
 import useTimer from '../hooks/useTimer'
 import Recorder from '../components/session/Recorder'
 import Button from '../components/ui/Button'
+import ConfirmToast from '../components/ui/Toast'
 
 function formatDuration(secs: number): string {
   const m = String(Math.floor(secs / 60)).padStart(2, '0')
@@ -13,23 +14,22 @@ function formatDuration(secs: number): string {
 
 export default function SessionPage() {
   const navigate = useNavigate()
-  const { session, nextQuestion, endSession } = useInterviewStore()
-  const { formatted, start: startTimer, reset: resetTimer } = useTimer()
+  const { session, nextQuestion, restartSession, endSession } = useInterviewStore()
+  const { formatted, start: startTimer, stop: stopTimer, reset: resetTimer } = useTimer()
   const [showAnswer, setShowAnswer] = useState(false)
   const [recorderKey, setRecorderKey] = useState(0)
+  const [confirmEnd, setConfirmEnd] = useState(false)
 
   useEffect(() => {
-    if (!session) {
-      navigate('/')
-      return
-    }
+    if (!session) { navigate('/'); return }
     startTimer()
+    return () => stopTimer()
   }, [])
 
   const currentQuestion = session?.questions[session.currentIndex]
-  const totalAsked = session?.askedIds.length ?? 0
   const totalQuestions = session?.questions.length ?? 0
-  const progress = totalQuestions > 0 ? (session!.currentIndex / totalQuestions) * 100 : 0
+  const totalAsked = session?.askedIds.length ?? 0
+  const progress = totalQuestions > 0 ? ((session!.currentIndex + 1) / totalQuestions) * 100 : 0
 
   const handleNext = useCallback(() => {
     nextQuestion()
@@ -39,23 +39,72 @@ export default function SessionPage() {
     setRecorderKey(k => k + 1)
   }, [nextQuestion, resetTimer, startTimer])
 
+  const handleRestart = () => {
+    restartSession()
+    resetTimer()
+    startTimer()
+    setShowAnswer(false)
+    setRecorderKey(k => k + 1)
+  }
+
   const handleEnd = () => {
-    if (confirm('면접을 종료하시겠습니까?')) {
-      endSession()
-      navigate('/')
-    }
+    stopTimer()
+    endSession()
+    navigate('/')
   }
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (session?.isDone) return
       if (e.key === 'ArrowRight' || e.key === 'n') handleNext()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [handleNext])
+  }, [handleNext, session?.isDone])
 
-  if (!session || !currentQuestion) return null
+  if (!session) return null
+
+  // 모든 질문 완료 화면
+  if (session.isDone) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center space-y-6">
+          <div className="text-5xl">🎉</div>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">모든 질문을 완료했습니다!</h2>
+            <p className="text-sm text-gray-500 mt-2">총 {totalAsked}개 질문 · {totalQuestions}개 문제 세트</p>
+          </div>
+
+          {session.recordings.length > 0 && (
+            <div className="text-left bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-600 mb-2">녹음 목록</p>
+              {session.recordings.map((r, i) => (
+                <div key={i} className="flex items-center justify-between text-xs gap-3">
+                  <span className="text-gray-600 truncate flex-1">{r.questionText}</span>
+                  <span className="text-gray-400 font-mono shrink-0">{formatDuration(r.duration)}</span>
+                  <audio controls src={r.blobURL} className="h-6 w-32 shrink-0" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-center">
+            <Button variant="secondary" onClick={handleEnd}>면접 종료</Button>
+            <Button onClick={handleRestart}>
+              다시 시작
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentQuestion) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -76,7 +125,7 @@ export default function SessionPage() {
               </svg>
               <span className="font-mono">{formatted}</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleEnd} className="text-red-500 hover:bg-red-50">
+            <Button variant="ghost" size="sm" onClick={() => setConfirmEnd(true)} className="text-red-500 hover:bg-red-50">
               종료
             </Button>
           </div>
@@ -132,7 +181,7 @@ export default function SessionPage() {
         <Recorder key={recorderKey} questionText={currentQuestion.text} questionIndex={session.currentIndex} />
 
         <div className="flex gap-3 justify-end">
-          <Button variant="secondary" onClick={handleEnd}>면접 종료</Button>
+          <Button variant="secondary" onClick={() => setConfirmEnd(true)}>면접 종료</Button>
           <Button onClick={handleNext}>
             다음 질문
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,6 +211,15 @@ export default function SessionPage() {
           단축키: <kbd className="bg-white border border-gray-200 rounded px-1">→</kbd> 또는 <kbd className="bg-white border border-gray-200 rounded px-1">N</kbd> 다음 질문
         </p>
       </main>
+
+      {confirmEnd && (
+        <ConfirmToast
+          message="면접을 종료하시겠습니까?"
+          type="danger"
+          onConfirm={handleEnd}
+          onCancel={() => setConfirmEnd(false)}
+        />
+      )}
     </div>
   )
 }
