@@ -1,22 +1,36 @@
 import { useState, useRef, useCallback } from 'react'
 
-export default function useRecorder() {
-  const [status, setStatus] = useState('idle') // idle | recording | paused | stopped
-  const [audioURL, setAudioURL] = useState(null)
-  const [audioBlob, setAudioBlob] = useState(null)
+export type RecorderStatus = 'idle' | 'recording' | 'paused' | 'stopped'
+
+interface UseRecorderReturn {
+  status: RecorderStatus
+  audioURL: string | null
+  audioBlob: Blob | null
+  duration: number
+  start: () => Promise<void>
+  pause: () => void
+  resume: () => void
+  stop: () => void
+  reset: () => void
+  saveFile: (suggestedName?: string) => Promise<void>
+}
+
+export default function useRecorder(): UseRecorderReturn {
+  const [status, setStatus] = useState<RecorderStatus>('idle')
+  const [audioURL, setAudioURL] = useState<string | null>(null)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [duration, setDuration] = useState(0)
 
-  const mediaRecorderRef = useRef(null)
-  const chunksRef = useRef([])
-  const timerRef = useRef(null)
-  const startTimeRef = useRef(null)
-  const pausedDurationRef = useRef(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef = useRef<number>(0)
+  const pausedDurationRef = useRef<number>(0)
 
   const startTimer = useCallback(() => {
     startTimeRef.current = Date.now() - pausedDurationRef.current * 1000
     timerRef.current = setInterval(() => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000
-      setDuration(elapsed)
+      setDuration((Date.now() - startTimeRef.current) / 1000)
     }, 100)
   }, [])
 
@@ -92,9 +106,8 @@ export default function useRecorder() {
   const saveFile = useCallback(async (suggestedName = 'recording.webm') => {
     if (!audioBlob) return
     try {
-      // File System Access API — allows user to pick save path
-      if (window.showSaveFilePicker) {
-        const handle = await window.showSaveFilePicker({
+      if ('showSaveFilePicker' in window) {
+        const handle = await (window as Window & { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
           suggestedName,
           types: [{ description: 'Audio', accept: { 'audio/webm': ['.webm'] } }],
         })
@@ -102,14 +115,13 @@ export default function useRecorder() {
         await writable.write(audioBlob)
         await writable.close()
       } else {
-        // Fallback: download
         const a = document.createElement('a')
-        a.href = audioURL
+        a.href = audioURL!
         a.download = suggestedName
         a.click()
       }
     } catch (err) {
-      if (err.name !== 'AbortError') console.error('저장 오류:', err)
+      if (err instanceof Error && err.name !== 'AbortError') console.error('저장 오류:', err)
     }
   }, [audioBlob, audioURL])
 

@@ -27,26 +27,20 @@ export default function SetupPage() {
     }
   }
 
-  const categoryCounts = questions.reduce((acc, q) => {
-    acc[q.category] = (acc[q.category] || 0) + 1
+  const categoryCounts = questions.reduce<Record<string, number>>((acc, q) => {
+    acc[q.category] = (acc[q.category] ?? 0) + 1
     return acc
   }, {})
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-gray-900">면접 연습</h1>
             <p className="text-xs text-gray-500 mt-0.5">질문을 설정하고 면접을 시작하세요</p>
           </div>
-          <Button
-            size="lg"
-            onClick={handleStart}
-            disabled={questions.length === 0}
-            className="shadow-sm"
-          >
+          <Button size="lg" onClick={handleStart} disabled={questions.length === 0} className="shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -57,7 +51,6 @@ export default function SetupPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-6">
-        {/* Question Input Section */}
         <section className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h2 className="text-base font-semibold text-gray-800">질문 추가</h2>
           <QuestionInput />
@@ -66,7 +59,6 @@ export default function SetupPage() {
           </div>
         </section>
 
-        {/* Category Filter + Stats */}
         <section className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800">카테고리</h2>
@@ -97,9 +89,7 @@ export default function SetupPage() {
             <button
               onClick={() => setFilterCat('')}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filterCat === ''
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                filterCat === '' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               전체 ({questions.length})
@@ -109,12 +99,10 @@ export default function SetupPage() {
                 key={cat}
                 onClick={() => setFilterCat(cat === filterCat ? '' : cat)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filterCat === cat
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  filterCat === cat ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {cat} ({categoryCounts[cat] || 0})
+                {cat} ({categoryCounts[cat] ?? 0})
               </button>
             ))}
           </div>
@@ -126,7 +114,6 @@ export default function SetupPage() {
           )}
         </section>
 
-        {/* Question List */}
         <section className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-base font-semibold text-gray-800 mb-4">질문 목록</h2>
           <QuestionList filterCategory={filterCat || null} />

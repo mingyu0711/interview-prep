@@ -1,16 +1,72 @@
-# React + Vite
+# 면접 연습 앱 (Interview Prep)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+취업·이직 준비를 위한 셀프 면접 연습 웹 애플리케이션입니다.  
+질문 목록을 직접 구성하고, 랜덤 질문을 받으며 답변을 녹음하고 저장할 수 있습니다.
 
-Currently, two official plugins are available:
+## 주요 기능
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **질문 관리** — 단일 입력 또는 `.txt` 파일 업로드로 질문 일괄 추가 / 편집 / 삭제
+- **카테고리 분류** — 프론트엔드, 백엔드, CS/자료구조, 알고리즘, 행동면접 등 카테고리별 관리 및 필터 면접
+- **랜덤 질문 출제** — 세션마다 질문을 셔플, 전체 소진 후 자동 재셔플
+- **답변 녹음** — 브라우저 내 마이크 녹음 (시작 / 일시정지 / 재개 / 중지)
+- **파일 저장** — 저장 경로 직접 지정 (File System Access API, 미지원 브라우저는 자동 다운로드)
+- **세션 타이머** — 전체 경과 시간 표시
+- **녹음 목록** — 세션 중 저장된 녹음 인라인 재생
+- **로컬 스토리지** — 질문 목록 자동 저장 (새로고침 후에도 유지)
 
-## React Compiler
+## 기술 스택
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 분류 | 기술 |
+|------|------|
+| 프레임워크 | React 19 + Vite |
+| 언어 | TypeScript |
+| 스타일 | Tailwind CSS v4 |
+| 상태관리 | Zustand (persist 미들웨어) |
+| 라우팅 | React Router v7 |
+| 녹음 | Web MediaRecorder API |
+| 저장 | File System Access API |
 
-## Expanding the ESLint configuration
+## 시작하기
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+```
+
+브라우저에서 `http://localhost:5173` 접속
+
+## 사용법
+
+### 1. 질문 설정
+- **단일 입력**: 카테고리 선택 후 질문 텍스트 입력 → `Enter` 또는 추가 버튼
+- **파일 업로드**: `.txt` 파일 업로드 (한 줄 = 한 질문)
+  - 카테고리 자동 분류 형식: `카테고리::질문 내용`
+  - 예시: `프론트엔드::클로저란 무엇인가요?`
+- 추가된 질문은 목록에서 편집·삭제 가능하며 새로고침 후에도 유지됩니다
+
+### 2. 면접 시작
+- 카테고리 필터로 특정 분야만 선택해 시작 가능
+- 상단 **면접 시작** 버튼 클릭
+
+### 3. 세션 진행
+- 질문이 랜덤으로 출제됩니다
+- **답변 녹음** 패널에서 녹음 시작 / 일시정지 / 중지
+- 녹음 중지 후 **파일 저장**으로 원하는 경로에 `.webm` 파일 저장
+- **다음 질문** 버튼 또는 키보드 `→` / `N` 키로 넘어가기
+
+### 키보드 단축키
+
+| 단축키 | 동작 |
+|--------|------|
+| `→` 또는 `N` | 다음 질문 |
+| `Space` | 녹음 시작 / 일시정지 토글 |
+
+## 향후 계획
+
+- [ ] LLM 기반 답변 평가
+- [ ] 음성 인식(STT) 연동
+- [ ] 세션 히스토리 저장
+- [ ] 질문 난이도 설정

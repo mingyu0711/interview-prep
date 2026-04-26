@@ -2,7 +2,7 @@ import { useState } from 'react'
 import useInterviewStore from '../../store/useInterviewStore'
 import Button from '../ui/Button'
 
-const CATEGORY_COLORS = {
+const CATEGORY_COLORS: Record<string, string> = {
   '일반': 'bg-gray-100 text-gray-700',
   '프론트엔드': 'bg-blue-100 text-blue-700',
   '백엔드': 'bg-purple-100 text-purple-700',
@@ -11,13 +11,17 @@ const CATEGORY_COLORS = {
   '행동면접': 'bg-pink-100 text-pink-700',
 }
 
-function categoryColor(cat) {
-  return CATEGORY_COLORS[cat] || 'bg-gray-100 text-gray-600'
+function categoryColor(cat: string): string {
+  return CATEGORY_COLORS[cat] ?? 'bg-gray-100 text-gray-600'
 }
 
-export default function QuestionList({ filterCategory }) {
+interface QuestionListProps {
+  filterCategory: string | null
+}
+
+export default function QuestionList({ filterCategory }: QuestionListProps) {
   const { questions, removeQuestion, updateQuestion, categories, clearQuestions } = useInterviewStore()
-  const [editingId, setEditingId] = useState(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [editText, setEditText] = useState('')
   const [editCat, setEditCat] = useState('')
 
@@ -25,13 +29,13 @@ export default function QuestionList({ filterCategory }) {
     ? questions.filter(q => q.category === filterCategory)
     : questions
 
-  const startEdit = (q) => {
+  const startEdit = (q: { id: number; text: string; category: string }) => {
     setEditingId(q.id)
     setEditText(q.text)
     setEditCat(q.category)
   }
 
-  const saveEdit = (id) => {
+  const saveEdit = (id: number) => {
     if (editText.trim()) updateQuestion(id, editText.trim(), editCat)
     setEditingId(null)
   }
@@ -48,7 +52,9 @@ export default function QuestionList({ filterCategory }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-500">총 {filtered.length}개 {filterCategory && `(${filterCategory})`}</p>
+        <p className="text-sm text-gray-500">
+          총 {filtered.length}개 {filterCategory && `(${filterCategory})`}
+        </p>
         {questions.length > 0 && (
           <Button
             variant="ghost"
@@ -61,7 +67,10 @@ export default function QuestionList({ filterCategory }) {
         )}
       </div>
       {filtered.map((q, idx) => (
-        <div key={q.id} className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30 group transition-colors">
+        <div
+          key={q.id}
+          className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30 group transition-colors"
+        >
           <span className="text-xs text-gray-400 mt-0.5 w-6 shrink-0 text-right">{idx + 1}</span>
           {editingId === q.id ? (
             <div className="flex-1 space-y-2">

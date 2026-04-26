@@ -1,9 +1,23 @@
 import { useState, useRef, useCallback } from 'react'
 
-export default function useTimer() {
+interface UseTimerReturn {
+  elapsed: number
+  formatted: string
+  start: () => void
+  stop: () => void
+  reset: () => void
+}
+
+function format(secs: number): string {
+  const m = String(Math.floor(secs / 60)).padStart(2, '0')
+  const s = String(secs % 60).padStart(2, '0')
+  return `${m}:${s}`
+}
+
+export default function useTimer(): UseTimerReturn {
   const [elapsed, setElapsed] = useState(0)
-  const startedAtRef = useRef(null)
-  const rafRef = useRef(null)
+  const startedAtRef = useRef<number>(0)
+  const rafRef = useRef<number | null>(null)
 
   const tick = useCallback(() => {
     setElapsed(Math.floor((Date.now() - startedAtRef.current) / 1000))
@@ -17,19 +31,13 @@ export default function useTimer() {
   }, [tick])
 
   const stop = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
   }, [])
 
   const reset = useCallback(() => {
     stop()
     setElapsed(0)
   }, [stop])
-
-  const format = (secs) => {
-    const m = String(Math.floor(secs / 60)).padStart(2, '0')
-    const s = String(secs % 60).padStart(2, '0')
-    return `${m}:${s}`
-  }
 
   return { elapsed, formatted: format(elapsed), start, stop, reset }
 }

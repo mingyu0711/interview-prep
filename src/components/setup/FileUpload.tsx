@@ -3,22 +3,20 @@ import useInterviewStore from '../../store/useInterviewStore'
 import Button from '../ui/Button'
 
 export default function FileUpload() {
-  const fileRef = useRef(null)
-  const [result, setResult] = useState(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [result, setResult] = useState<{ total: number; added: number } | null>(null)
   const { addQuestions, categories } = useInterviewStore()
   const [defaultCategory, setDefaultCategory] = useState('일반')
 
-  const handleFile = (e) => {
-    const file = e.target.files[0]
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      const lines = ev.target.result
-        .split('\n')
-        .map(l => l.trim())
-        .filter(Boolean)
+      const content = ev.target?.result
+      if (typeof content !== 'string') return
+      const lines = content.split('\n').map(l => l.trim()).filter(Boolean)
 
-      // Support optional "카테고리::질문" format
       const items = lines.map(line => {
         const sepIdx = line.indexOf('::')
         if (sepIdx !== -1) {
@@ -51,7 +49,9 @@ export default function FileUpload() {
           텍스트 파일 업로드
         </Button>
         <input ref={fileRef} type="file" accept=".txt" className="hidden" onChange={handleFile} />
-        <p className="text-xs text-gray-400">한 줄에 하나의 질문 또는 <code className="bg-gray-100 px-1 rounded">카테고리::질문</code> 형식</p>
+        <p className="text-xs text-gray-400">
+          한 줄에 하나의 질문 또는 <code className="bg-gray-100 px-1 rounded">카테고리::질문</code> 형식
+        </p>
       </div>
       {result && (
         <p className="text-sm text-emerald-600">
