@@ -1,24 +1,20 @@
-import useSetup from '../hooks/useSetup'
-import QuestionInput from '../components/setup/QuestionInput'
-import FileUpload from '../components/setup/FileUpload'
-import QuestionList from '../components/setup/QuestionList'
-import Button from '../components/ui/Button'
-import CategoryPill from '../components/ui/CategoryPill'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import useInterviewStore from '../store/useInterviewStore'
+import Button from '../shared/components/Button'
+import QuestionInput from '../features/questions/components/QuestionInput'
+import FileUpload from '../features/questions/components/FileUpload'
+import QuestionList from '../features/questions/components/QuestionList'
+import CategoryFilter from '../features/categories/components/CategoryFilter'
 
 export default function SetupPage() {
-  const {
-    questions,
-    categories,
-    filterCat,
-    newCatName,
-    setNewCatName,
-    showCatInput,
-    setShowCatInput,
-    categoryCounts,
-    handleStart,
-    handleAddCategory,
-    toggleCategory,
-  } = useSetup()
+  const navigate = useNavigate()
+  const { questions, startSession } = useInterviewStore()
+  const [filterCat, setFilterCat] = useState('')
+
+  const handleStart = () => {
+    if (startSession(filterCat || null)) navigate('/session')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,54 +44,7 @@ export default function SetupPage() {
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-800">카테고리</h2>
-            <button
-              onClick={() => setShowCatInput(v => !v)}
-              className="text-xs text-indigo-600 hover:underline"
-            >
-              + 카테고리 추가
-            </button>
-          </div>
-
-          {showCatInput && (
-            <div className="flex gap-2 mb-4">
-              <input
-                autoFocus
-                value={newCatName}
-                onChange={e => setNewCatName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddCategory() }}
-                placeholder="새 카테고리 이름"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <Button size="sm" onClick={handleAddCategory}>추가</Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowCatInput(false)}>취소</Button>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <CategoryPill
-              category="전체"
-              count={questions.length}
-              selected={filterCat === ''}
-              onClick={() => toggleCategory('')}
-            />
-            {categories.map(cat => (
-              <CategoryPill
-                key={cat}
-                category={cat}
-                count={categoryCounts[cat] ?? 0}
-                selected={filterCat === cat}
-                onClick={() => toggleCategory(cat)}
-              />
-            ))}
-          </div>
-
-          {filterCat && (
-            <p className="mt-3 text-xs text-indigo-600">
-              "{filterCat}" 카테고리로만 면접을 시작합니다.
-            </p>
-          )}
+          <CategoryFilter selected={filterCat} onChange={setFilterCat} />
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-6">

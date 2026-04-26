@@ -35,10 +35,7 @@ export default function useRecorder(): UseRecorderReturn {
   }, [])
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
   }, [])
 
   const start = useCallback(async () => {
@@ -49,9 +46,7 @@ export default function useRecorder(): UseRecorderReturn {
       chunksRef.current = []
       pausedDurationRef.current = 0
 
-      mr.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data)
-      }
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       mr.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         setAudioBlob(blob)
@@ -107,10 +102,8 @@ export default function useRecorder(): UseRecorderReturn {
     if (!audioBlob) return
     try {
       if ('showSaveFilePicker' in window) {
-        const handle = await (window as Window & { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
-          suggestedName,
-          types: [{ description: 'Audio', accept: { 'audio/webm': ['.webm'] } }],
-        })
+        const handle = await (window as Window & { showSaveFilePicker: (o: unknown) => Promise<FileSystemFileHandle> })
+          .showSaveFilePicker({ suggestedName, types: [{ description: 'Audio', accept: { 'audio/webm': ['.webm'] } }] })
         const writable = await handle.createWritable()
         await writable.write(audioBlob)
         await writable.close()

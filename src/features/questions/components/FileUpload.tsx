@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import useInterviewStore from '../../store/useInterviewStore'
-import Button from '../ui/Button'
+import useInterviewStore from '../../../store/useInterviewStore'
+import Button from '../../../shared/components/Button'
 
 export default function FileUpload() {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -16,17 +16,12 @@ export default function FileUpload() {
       const content = ev.target?.result
       if (typeof content !== 'string') return
       const lines = content.split('\n').map(l => l.trim()).filter(Boolean)
-
       const items = lines.map(line => {
-        const sepIdx = line.indexOf('::')
-        if (sepIdx !== -1) {
-          return { category: line.slice(0, sepIdx).trim(), text: line.slice(sepIdx + 2).trim() }
-        }
+        const sep = line.indexOf('::')
+        if (sep !== -1) return { category: line.slice(0, sep).trim(), text: line.slice(sep + 2).trim() }
         return { category: defaultCategory, text: line }
       })
-
-      const added = addQuestions(items)
-      setResult({ total: lines.length, added })
+      setResult({ total: lines.length, added: addQuestions(items) })
     }
     reader.readAsText(file)
     e.target.value = ''
@@ -50,7 +45,7 @@ export default function FileUpload() {
         </Button>
         <input ref={fileRef} type="file" accept=".txt" className="hidden" onChange={handleFile} />
         <p className="text-xs text-gray-400">
-          한 줄에 하나의 질문 또는 <code className="bg-gray-100 px-1 rounded">카테고리::질문</code> 형식
+          한 줄에 하나 또는 <code className="bg-gray-100 px-1 rounded">카테고리::질문</code> 형식
         </p>
       </div>
       {result && (

@@ -1,11 +1,6 @@
-import type { Session } from '../../types'
-import Button from '../ui/Button'
-
-function formatDuration(secs: number): string {
-  const m = String(Math.floor(secs / 60)).padStart(2, '0')
-  const s = String(Math.floor(secs % 60)).padStart(2, '0')
-  return `${m}:${s}`
-}
+import type { Session } from '../../../types'
+import Button from '../../../shared/components/Button'
+import RecordingList from './RecordingList'
 
 interface SessionDoneScreenProps {
   session: Session
@@ -25,18 +20,7 @@ export default function SessionDoneScreen({ session, onRestart, onEnd }: Session
           </p>
         </div>
 
-        {session.recordings.length > 0 && (
-          <div className="text-left bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2">
-            <p className="text-xs font-semibold text-gray-600 mb-2">녹음 목록</p>
-            {session.recordings.map((r, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs">
-                <span className="text-gray-600 truncate flex-1">{r.questionText}</span>
-                <span className="text-gray-400 font-mono shrink-0">{formatDuration(r.duration)}</span>
-                <audio controls src={r.blobURL} className="h-6 w-32 shrink-0" />
-              </div>
-            ))}
-          </div>
-        )}
+        <RecordingList recordings={session.recordings} />
 
         <div className="flex gap-3 justify-center">
           <Button variant="secondary" onClick={onEnd}>면접 종료</Button>
