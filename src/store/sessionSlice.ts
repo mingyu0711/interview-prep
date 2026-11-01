@@ -1,10 +1,9 @@
 import type { StateCreator } from 'zustand'
-import type { Session, Recording } from '../types'
-import type { QuestionSlice } from './questionSlice'
+import type { Session, Recording, Question } from '../types'
 
 export interface SessionSlice {
   session: Session | null
-  startSession: (filterCategory?: string | null) => boolean
+  startSession: (questions: readonly Question[], filterCategory?: string | null) => boolean
   nextQuestion: () => void
   restartSession: () => void
   addRecording: (recording: Recording) => void
@@ -16,17 +15,17 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export const createSessionSlice: StateCreator<
-  SessionSlice & QuestionSlice,
+  SessionSlice,
   [],
   [],
   SessionSlice
 > = (set, get) => ({
   session: null,
 
-  startSession: (filterCategory = null) => {
-    const pool = get().questions.filter(q =>
+  startSession: (questions, filterCategory = null) => {
+    const pool = questions.filter(q =>
       filterCategory ? q.category === filterCategory : true,
-    )
+    ).map(question => ({ ...question }))
     if (pool.length === 0) return false
     const shuffled = shuffle(pool)
     set({
