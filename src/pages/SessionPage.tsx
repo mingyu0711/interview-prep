@@ -12,12 +12,14 @@ import SessionDoneScreen from '../features/session/components/SessionDoneScreen'
 export default function SessionPage() {
   const navigate = useNavigate()
   const { session, timer, recorderKey, confirmEnd, setConfirmEnd, handleNext, handleRestart, handleEnd } = useSession()
+  const hasSession = session !== null
+  const { start, stop } = timer
 
   useEffect(() => {
-    if (!session) { navigate('/'); return }
-    timer.start()
-    return () => timer.stop()
-  }, [])
+    if (!hasSession) { navigate('/'); return }
+    start()
+    return stop
+  }, [hasSession, navigate, start, stop])
 
   if (!session) return null
   if (session.isDone) return <SessionDoneScreen session={session} onRestart={handleRestart} onEnd={handleEnd} />
