@@ -1,8 +1,5 @@
-export interface Question {
-  id: number
-  text: string
-  category: string
-}
+import type { Question } from '../features/questions/model/question'
+export type { Question } from '../features/questions/model/question'
 
 export interface Recording {
   questionText: string

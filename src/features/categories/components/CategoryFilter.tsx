@@ -1,21 +1,23 @@
 import { useState } from 'react'
-import useInterviewStore from '../../../store/useInterviewStore'
+import useCategoryStore from '../../../store/useCategoryStore'
+import type { Question } from '../../../types'
 import CategoryPill from '../../../shared/components/CategoryPill'
 import CategoryInput from './CategoryInput'
 
 interface CategoryFilterProps {
+  questions: readonly Question[]
   selected: string
   onChange: (category: string) => void
 }
 
-export default function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
-  const { questions, categories } = useInterviewStore()
+export default function CategoryFilter({ questions, selected, onChange }: CategoryFilterProps) {
+  const categories = useCategoryStore(state => state.categories)
   const [showInput, setShowInput] = useState(false)
 
-  const counts = questions.reduce<Record<string, number>>((acc, q) => {
-    acc[q.category] = (acc[q.category] ?? 0) + 1
-    return acc
-  }, {})
+  const counts = new Map<string, number>()
+  for (const question of questions) {
+    counts.set(question.category, (counts.get(question.category) ?? 0) + 1)
+  }
 
   return (
     <div>
@@ -39,7 +41,7 @@ export default function CategoryFilter({ selected, onChange }: CategoryFilterPro
           <CategoryPill
             key={cat}
             category={cat}
-            count={counts[cat] ?? 0}
+            count={counts.get(cat) ?? 0}
             selected={selected === cat}
             onClick={() => onChange(selected === cat ? '' : cat)}
           />
