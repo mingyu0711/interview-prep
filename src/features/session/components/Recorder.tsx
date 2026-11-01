@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useRecorder from '../../../shared/hooks/useRecorder'
 import useInterviewStore from '../../../store/useInterviewStore'
 import Button from '../../../shared/components/Button'
@@ -15,9 +15,11 @@ interface RecorderProps {
 }
 
 export default function Recorder({ questionText, questionIndex }: RecorderProps) {
-  const { status, audioURL, duration, start, pause, resume, stop, saveFile } = useRecorder()
+  const { status, audioURL, duration, start, pause, resume, stop, reset, saveFile } = useRecorder()
   const { addRecording } = useInterviewStore()
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => { reset(); setSaved(false) }, [questionIndex])
 
   const handleSave = async () => {
     const snippet = questionText.slice(0, 30).replace(/[^가-힣a-zA-Z0-9]/g, '_')
