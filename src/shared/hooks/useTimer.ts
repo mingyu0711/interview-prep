@@ -19,7 +19,7 @@ export default function useTimer(): UseTimerReturn {
   const startedAtRef = useRef<number>(0)
   const rafRef = useRef<number | null>(null)
 
-  const tick = useCallback(() => {
+  const tick = useCallback(function tick() {
     setElapsed(Math.floor((Date.now() - startedAtRef.current) / 1000))
     rafRef.current = requestAnimationFrame(tick)
   }, [])
